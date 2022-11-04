@@ -11,6 +11,7 @@ import Trending from './Pages/Trending/Trending';
 import Movies from './Pages/Movies/Movies';
 import Series from './Pages/Series/Series';
 import Search from './Pages/Search/Search';
+import Error from './Pages/Error/Error';
 
 
 // const API_URL = "https://api.themoviedb.org/3/movie/550?api_key="
@@ -27,6 +28,7 @@ function App() {
               <Route path='/movies' element={<Movies />} />
               <Route path='/series' element={<Series />} />
               <Route path='/search' element={<Search />} />
+              <Route path='*' element={<Error />} />
             </Routes>
           </Container>
         </div>
