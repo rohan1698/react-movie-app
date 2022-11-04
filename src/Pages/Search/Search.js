@@ -84,6 +84,7 @@ const Search = () => {
                         setType(newValue)
                         setPage(1)
                     }}
+                    centered
 
                 >
                     <Tab style={{ width: '50%' }} label='Search Movies' />
