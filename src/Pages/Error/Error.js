@@ -1,19 +1,20 @@
-import { Container } from '@mui/material'
-import React from 'react'
-import './Error.css'
+import { useNavigate } from 'react-router-dom';
+import { I } from '../../components/icons/Icons';
 
 const Error = () => {
-    return (
-        <>
-            <Container>
-                <div class="p-5 mb-4 bg-light rounded-3">
-                    <div class="container-fluid py-5">
-                        <h1 class="display-5 fw-bold">Error 404. Page not found</h1>
-                    </div>
-                </div>
-            </Container>
-        </>
-    )
-}
+  const navigate = useNavigate();
+  return (
+    <div className="view">
+      <div className="empty" style={{ minHeight: '70vh', justifyContent: 'center' }}>
+        <I.grid />
+        <h3>404 — Page not found</h3>
+        <span>The page you're looking for doesn't exist.</span>
+        <button className="btn btn-primary" style={{ marginTop: 18 }} onClick={() => navigate('/')}>
+          <I.flame /> Back to Trending
+        </button>
+      </div>
+    </div>
+  );
+};
 
-export default Error
+export default Error;

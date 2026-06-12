@@ -1,4 +1,26 @@
+# Emit the webpack runtime as an external file (no inline <script>), so the CSP
+# can drop script-src 'unsafe-inline'.
+[build.environment]
+  INLINE_RUNTIME_CHUNK = "false"
+
+[functions]
+  directory = "netlify/functions"
+
+# TMDB API proxy — injects the api_key server-side. MUST precede the SPA
+# catch-all so /api/tmdb/* hits the function instead of index.html.
 [[redirects]]
-from="*"
-to="/index.html"
-status=200
+  from = "/api/tmdb/*"
+  to = "/.netlify/functions/tmdb/:splat"
+  status = 200
+
+# SPA client-side routing fallback.
+[[redirects]]
+  from = "*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://image.tmdb.org; connect-src 'self'; frame-src https://www.youtube.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"

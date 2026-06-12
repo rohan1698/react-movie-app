@@ -1,127 +1,135 @@
-import { Button, createTheme, Tab, Tabs, TextField, ThemeProvider } from '@mui/material'
-import React, { useEffect, useState } from 'react'
-import SearchIcon from '@mui/icons-material/Search';
 import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import MovieCard from '../../components/MovieCard/MovieCard';
+import CustomPagination from '../../components/Pagination/CustomPagination';
+import { I } from '../../components/icons/Icons';
+import { tmdbUrl } from '../../utils/tmdb';
 
-import MovieCard from '../../components/MovieCard/MovieCard'
-import CustomPagination from '../../components/Pagination/CustomPagination'
-
+const SUGGESTIONS = ['Action', 'Comedy', 'Sci-Fi', 'Animation', 'Thriller'];
 
 const Search = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [type, setType] = useState('movie');
+  const [page, setPage] = useState(1);
+  const [content, setContent] = useState([]);
+  const [numOfPages, setNumOfPages] = useState(0);
 
-    const [type, setType] = useState()
-    const [page, setPage] = useState(1)
-    const [searchText, setSearchText] = useState("")
-    const [content, setContent] = useState()
-    const [numOfPages, setNumOfPages] = useState()
+  const query = searchParams.get('q') || '';
 
-    const theme = createTheme({
-        palette: {
-            type: 'dark',
-            primary: {
-                main: '#fff'
-            },
-            label: {
-                primary: '#fff'
-            }
+  const setQuery = (q) => {
+    setPage(1);
+    setSearchParams(q ? { q } : {}, { replace: true });
+  };
 
-        },
+  const switchType = (t) => {
+    setType(t);
+    setPage(1);
+  };
 
-    })
-
-    const fetchSearch = async () => {
-        const { data } = await axios.get(`https://api.themoviedb.org/3/search/${type ? "tv" : "movie"}?api_key=${process.env.REACT_APP_API_KEY}&language=en-US&query=${searchText}&page=${page}&include_adult=false`)
-
-        setContent(data.results)
-        setNumOfPages(data.total_pages)
+  const fetchSearch = async () => {
+    if (!query.trim()) {
+      setContent([]);
+      setNumOfPages(0);
+      return;
     }
+    try {
+      const { data } = await axios.get(
+        tmdbUrl(`/search/${type}`, {
+          language: 'en-US',
+          query,
+          page,
+          include_adult: false,
+        })
+      );
+      setContent(data.results);
+      setNumOfPages(data.total_pages);
+    } catch {
+      setContent([]);
+      setNumOfPages(0);
+    }
+  };
 
-    useEffect(() => {
-        window.scroll(0, 0)
-        fetchSearch()
-        // eslint-disable-next-line
-    }, [type, page])
+  useEffect(() => {
+    fetchSearch();
+    // eslint-disable-next-line
+  }, [type, page, query]);
 
-    return (
-        <>
-            <ThemeProvider theme={theme}>
-                <div style={{ display: 'flex', margin: '20px 0' }}>
-                    <TextField
-                        style={{ flex: 1 }}
-                        className='searchBox'
-                        label='Search'
-                        variant='filled'
-                        color='primary'
-                        InputProps={{
-                            style: {
-                                color: 'white',
-                            }
-                        }}
-                        InputLabelProps={{
-                            style: {
-                                color: 'white',
-                            }
-                        }}
+  const hasResults = content && content.length > 0;
 
-                        onChange={(e) => setSearchText(e.target.value)}
+  return (
+    <div className="view">
+      <div className="search-head">
+        <div className="search-field">
+          <I.search />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={type === 'movie' ? 'Search movies…' : 'Search TV series…'}
+            autoFocus
+            aria-label="Search"
+          />
+          {query && <button type="button" className="clear" onClick={() => setQuery('')} aria-label="Clear search"><I.close /></button>}
+        </div>
 
-                    />
+        <div className="seg">
+          <button className={type === 'movie' ? 'on' : ''} onClick={() => switchType('movie')}>Movies</button>
+          <button className={type === 'tv' ? 'on' : ''} onClick={() => switchType('tv')}>TV Series</button>
+        </div>
 
-                    <Button
-                        variant='filled'
-                        style={{ marginLeft: 10, marginTop: 10 }}
-                        onClick={fetchSearch}
-                    >
-                        <SearchIcon />
-                    </Button>
-                </div>
+        {!query && (
+          <div className="suggest">
+            <span className="lbl">Try:</span>
+            {SUGGESTIONS.map((s) => (
+              <button key={s} className="gchip" onClick={() => setQuery(s)}>{s}</button>
+            ))}
+          </div>
+        )}
+      </div>
 
-                <Tabs
-                    value={type}
-                    indicatorColor='primary'
-                    textColor='standard'
-                    onChange={(event, newValue) => {
-                        setType(newValue)
-                        setPage(1)
-                    }}
-                    centered
-
-                >
-                    <Tab style={{ width: '50%' }} label='Search Movies' />
-                    <Tab style={{ width: '50%' }} label='Search TV Series' />
-
-                </Tabs>
-
-            </ThemeProvider>
-            <div className='trending'>
-                {
-                    content && content.map((c) => (
-                        <MovieCard
-                            key={c.id}
-                            id={c.id}
-                            poster={c.poster_path}
-                            title={c.title || c.name}
-                            date={c.release_date || c.first_air_date}
-                            media_type={type ? 'tv' : 'movie'}
-                            vote_average={c.vote_average}
-
-                        />
-                    ))
-                }
-                {
-                    searchText &&
-                    !content &&
-                    (type ?
-                        <h2>No series Found</h2> : <h2>No movies Found</h2>)
-                }
+      <div className="section">
+        {query && hasResults && (
+          <section>
+            <div className="row-head">
+              <h2>Results</h2>
+              <span className="sub">for "{query}" in {type === 'movie' ? 'Movies' : 'TV Series'}</span>
             </div>
-            {
-                numOfPages > 1 && (
-                    <CustomPagination setPage={setPage} numOfPages={numOfPages} />
-                )
-            }
-        </>
-    )
-}
+            <div className="grid">
+              {content.map((c, i) => (
+                <MovieCard
+                  key={c.id}
+                  id={c.id}
+                  poster={c.poster_path}
+                  title={c.title || c.name}
+                  date={c.release_date || c.first_air_date}
+                  media_type={type}
+                  vote_average={c.vote_average}
+                  index={i}
+                />
+              ))}
+            </div>
+            {numOfPages > 1 && <CustomPagination setPage={setPage} page={page} numOfPages={numOfPages} />}
+          </section>
+        )}
 
-export default Search
+        {query && !hasResults && (
+          <div className="empty">
+            <I.search />
+            <h3>No {type === 'movie' ? 'movies' : 'series'} found</h3>
+            <span>Nothing matched "{query}". Try another title or genre.</span>
+          </div>
+        )}
+
+        {!query && (
+          <div className="empty">
+            <I.search />
+            <h3>Search Moviecon</h3>
+            <span>Find any film or series by title.</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Search;

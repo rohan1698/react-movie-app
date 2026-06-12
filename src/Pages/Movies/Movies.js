@@ -1,71 +1,106 @@
-import axios from 'axios'
-import React, { useEffect, useState } from 'react'
-import Genres from '../../components/Genres/Genres'
-import MovieCard from '../../components/MovieCard/MovieCard'
-import CustomPagination from '../../components/Pagination/CustomPagination'
-import useGenres from '../../hooks/useGenre'
+import { useEffect, useState } from 'react';
+import Genres from '../../components/Genres/Genres';
+import MovieCard from '../../components/MovieCard/MovieCard';
+import CustomPagination from '../../components/Pagination/CustomPagination';
+import PerPage from '../../components/PerPage/PerPage';
+import useGenres from '../../hooks/useGenre';
+import { fetchTmdbPages, viewCount } from '../../utils/fetchPages';
+import { tmdbUrl } from '../../utils/tmdb';
+import { I } from '../../components/icons/Icons';
 
 const Movies = () => {
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(40);
+  const [content, setContent] = useState([]);
+  const [numOfPages, setNumOfPages] = useState(0);
+  const [genres, setGenres] = useState([]);
+  const [selectedGenres, setSelectedGenres] = useState([]);
+  const genreforURL = useGenres(selectedGenres);
 
-    const [page, setPage] = useState(1)
-    const [content, setContent] = useState([])
-    const [numOfPages, setNumOfPages] = useState()
-    const [genres, setGenres] = useState([])
-    const [selectedGenres, setSelectedGenres] = useState([])
-    const genreforURL = useGenres(selectedGenres)
-
-
-    const fetchMovies = async () => {
-        const { data } = await axios.get(`https://api.themoviedb.org/3/discover/movie?api_key=${process.env.REACT_APP_API_KEY}&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=${page}&with_genres=${genreforURL}`)
-
-        setContent(data.results)
-        setNumOfPages(data.total_pages)
+  const fetchMovies = async () => {
+    try {
+      const k = perPage / 20;
+      const base = (page - 1) * k + 1;
+      const { results, totalPages } = await fetchTmdbPages(
+        (p) =>
+          tmdbUrl('/discover/movie', {
+            language: 'en-US',
+            sort_by: 'popularity.desc',
+            include_adult: false,
+            include_video: false,
+            page: p,
+            with_genres: genreforURL,
+          }),
+        base,
+        k
+      );
+      setContent(results);
+      setNumOfPages(viewCount(totalPages, k));
+    } catch {
+      setContent([]);
+      setNumOfPages(0);
     }
+  };
 
-    useEffect(() => {
-        fetchMovies()
-        // eslint-disable-next-line
-    }, [page, genreforURL])
+  useEffect(() => {
+    fetchMovies();
+    // eslint-disable-next-line
+  }, [page, genreforURL, perPage]);
 
-    return (
-        <>
-            <span className='pageTitle'>
-                Movies
-            </span>
+  const changePerPage = (n) => {
+    setPerPage(n);
+    setPage(1);
+  };
 
-            <Genres
-                type='movie'
-                selectedGenres={selectedGenres}
-                setSelectedGenres={setSelectedGenres}
-                genres={genres}
-                setGenres={setGenres}
-                setPage={setPage}
+  return (
+    <div className="view">
+      <div className="page-head">
+        <span className="eyebrow">Browse</span>
+        <h1>Movies</h1>
+        <p>Hand-picked across every genre — from quiet dramas to loud, kinetic spectacle.</p>
+      </div>
 
-            />
+      <Genres
+        type="movie"
+        selectedGenres={selectedGenres}
+        setSelectedGenres={setSelectedGenres}
+        genres={genres}
+        setGenres={setGenres}
+        setPage={setPage}
+      />
 
-            <div className='trending'>
-                {
-                    content && content.map((c) => (
-                        <MovieCard
-                            key={c.id}
-                            id={c.id}
-                            poster={c.poster_path}
-                            title={c.title || c.name}
-                            date={c.release_date || c.first_air_date}
-                            media_type='movie'
-                            vote_average={c.vote_average}
+      <div className="section">
+        <div className="list-toolbar">
+          <PerPage value={perPage} onChange={changePerPage} />
+        </div>
 
-                        />
-                    ))
-                }
-            </div>
-            {
-                numOfPages > 1 && (
-                    <CustomPagination setPage={setPage} numOfPages={numOfPages} />
-                )
-            }
-        </>
-    )
-}
+        {content && content.length > 0 ? (
+          <div className="grid">
+            {content.map((c, i) => (
+              <MovieCard
+                key={c.id}
+                id={c.id}
+                poster={c.poster_path}
+                title={c.title || c.name}
+                date={c.release_date || c.first_air_date}
+                media_type="movie"
+                vote_average={c.vote_average}
+                index={i}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="empty">
+            <I.grid />
+            <h3>Nothing matches those filters</h3>
+            <span>Try removing a genre.</span>
+          </div>
+        )}
 
-export default Movies
+        {numOfPages > 1 && <CustomPagination setPage={setPage} page={page} numOfPages={numOfPages} />}
+      </div>
+    </div>
+  );
+};
+
+export default Movies;

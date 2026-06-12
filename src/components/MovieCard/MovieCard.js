@@ -1,43 +1,36 @@
-import { Badge } from '@mui/material'
-import React from 'react'
-import { img_300, unavailable } from '../../config/config'
-import ContentModal from '../ContentModal/ContentModal'
-import './MovieCard.css'
+import { useModal } from '../../context/ModalContext';
+import { artStyle } from '../../utils/artFallback';
+import { I } from '../icons/Icons';
 
-const MovieCard = ({
-  id,
-  poster,
-  title,
-  date,
-  media_type,
-  vote_average,
-}) => {
+/* Poster card. Real TMDB poster with gradient fallback, rating badge, and a
+   hover "play" affordance. Clicking opens the single app-level ContentModal. */
+const MovieCard = ({ id, poster, title, date, media_type, vote_average, index = 0 }) => {
+  const { openModal } = useModal();
+  const year = date ? String(date).substring(0, 4) : '';
+  const kind = media_type === 'tv' ? 'Series' : 'Movie';
+  const rating = vote_average != null ? Number(vote_average) : null;
+
   return (
-    <>
-      <ContentModal media_type={media_type} id={id}>
-
-        <Badge
-          badgeContent={vote_average.toFixed(1)}
-          color={vote_average > 6 ? 'primary' : 'secondary'}
-
-        />
-        <img
-          src={poster ? `${img_300}/${poster}` : unavailable}
-          alt={title}
-
-        />
-        <b className='title'>
-          {title}
-        </b>
-        <span className='sub-title'>
-          {media_type === 'tv' ? 'TV Series' : 'Movie'}
-          <span className='sub-title'>
-            {date}
+    <div
+      className="card"
+      style={{ animationDelay: `${Math.min(index * 35, 400)}ms` }}
+      onClick={() => openModal({ id, media_type })}
+    >
+      <div className="card-art" style={artStyle(poster, id, 'poster', 300)}>
+        <div className="card-grain" />
+        {rating != null && (
+          <span className={'rating' + (rating >= 8 ? ' high' : '')}>
+            <I.star /> {rating.toFixed(1)}
           </span>
-        </span>
-      </ContentModal>
-    </>
-  )
-}
+        )}
+        <div className="card-poster-title">{title}</div>
+        <div className="card-play"><span><I.play /></span></div>
+      </div>
+      <div className="card-meta">
+        <div className="d">{kind}{year ? ` · ${year}` : ''}</div>
+      </div>
+    </div>
+  );
+};
 
-export default MovieCard
+export default MovieCard;

@@ -1,0 +1,66 @@
+.tweaks-panel {
+  position: fixed;
+  right: clamp(14px, 2.4vmin, 26px);
+  bottom: clamp(14px, 2.4vmin, 26px);
+  z-index: 70;
+  width: 280px;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  animation: modalIn .32s cubic-bezier(.2, .7, .2, 1);
+}
+.tweaks-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 12px 12px 18px;
+  border-bottom: 1px solid var(--hairline);
+}
+.tweaks-head b { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
+.tweaks-head .icon-btn { width: 32px; height: 32px; }
+.tweaks-head .icon-btn svg { width: 16px; height: 16px; }
+
+.tweaks-body {
+  padding: 14px 18px 20px;
+  display: flex; flex-direction: column; gap: 10px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.tweaks-sect {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3); padding-top: 6px;
+}
+.tweaks-sect:first-child { padding-top: 0; }
+
+.tweaks-swatches { display: flex; gap: 8px; }
+.tweaks-swatches .swatch {
+  width: 34px; height: 34px; border-radius: 10px; cursor: pointer;
+  border: 2px solid transparent; padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: transform .14s ease, border-color .14s ease;
+}
+.tweaks-swatches .swatch:hover { transform: translateY(-2px); }
+.tweaks-swatches .swatch.on { border-color: #fff; }
+
+.tweaks-seg { display: flex; align-self: stretch; }
+.tweaks-seg button { flex: 1; text-transform: capitalize; }
+
+.tweaks-row { display: flex; align-items: center; gap: 12px; }
+.tweaks-row input[type="range"] {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); outline: none;
+}
+.tweaks-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%; background: var(--accent);
+  border: 2px solid #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.tweaks-row input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%; background: var(--accent);
+  border: 2px solid #fff; cursor: pointer;
+}
+.tweaks-val {
+  font-size: 13px; font-weight: 600; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; min-width: 38px; text-align: right;
+}

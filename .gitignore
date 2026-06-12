@@ -22,3 +22,22 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# graphify knowledge-graph output (generated)
+/graphify-out
+
+# design prototype reference files (not part of the app — kept locally as reference)
+/Moviecon.html
+/moviecon-app.jsx
+/moviecon-components.jsx
+/moviecon-data.js
+/moviecon.css
+/tweaks-panel.jsx
+/screenshots
+/uploads
+
+# editor / tooling
+.hintrc
+
+# one-off audit report (not app source)
+/REVIEW_REPORT.md

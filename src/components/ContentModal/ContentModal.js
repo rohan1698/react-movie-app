@@ -1,146 +1,120 @@
-import * as React from 'react';
-import Backdrop from '@mui/material/Backdrop';
-import Box from '@mui/material/Box';
-import Modal from '@mui/material/Modal';
-import Fade from '@mui/material/Fade';
-import Button from '@mui/material/Button';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useState } from 'react';
-import { img_500, unavailable, unavailableLandscape } from '../../config/config';
-import { YouTube } from '@mui/icons-material';
-import './ContentModal.css'
+import { useModal } from '../../context/ModalContext';
+import { artStyle } from '../../utils/artFallback';
+import { tmdbUrl } from '../../utils/tmdb';
+import { I } from '../icons/Icons';
 
-import '../MovieCard/MovieCard.css'
+/* Single app-level content modal. Reads the open target from ModalContext and
+   fetches TMDB detail + trailer lazily (only when something is opened), so the
+   grid no longer fires detail/video requests per card on mount. */
+export default function ContentModal() {
+  const { target, closeModal } = useModal();
+  const [content, setContent] = useState(null);
+  const [video, setVideo] = useState(undefined);
 
-const style = {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: "80%",
-    height: "80%",
-    backgroundColor: "#39445a",
-    border: "1px solid #282c34",
-    borderRadius: 10,
-    color: "white",
-    p: 4
-};
-
-export default function ContentModal({ children, media_type, id }) {
-    const [open, setOpen] = useState(false);
-    const handleOpen = () => setOpen(true);
-    const handleClose = () => setOpen(false);
-
-    const [content, setContent] = useState()
-    const [video, setVideo] = useState()
+  useEffect(() => {
+    if (!target) {
+      setContent(null);
+      setVideo(undefined);
+      return;
+    }
+    let active = true;
+    setContent(null);
+    setVideo(undefined);
+    const { id, media_type } = target;
 
     const fetchData = async () => {
-        const { data } = await axios.get(`
-        https://api.themoviedb.org/3/${media_type}/${id}?api_key=${process.env.REACT_APP_API_KEY}&language=en-US
-        `)
-        setContent(data)
-    }
+      try {
+        const { data } = await axios.get(
+          tmdbUrl(`/${media_type}/${id}`, { language: 'en-US' })
+        );
+        if (active) setContent(data);
+      } catch {
+        if (active) setContent(null);
+      }
+    };
 
     const fetchVideo = async () => {
-        const { data } = await axios.get(`
-        https://api.themoviedb.org/3/${media_type}/${id}/videos?api_key=${process.env.REACT_APP_API_KEY}&language=en-US
-        `)
-        setVideo(data.results[0]?.key)
-    }
+      try {
+        const { data } = await axios.get(
+          tmdbUrl(`/${media_type}/${id}/videos`, { language: 'en-US' })
+        );
+        // Prefer an actual YouTube trailer; fall back to any YouTube clip.
+        const vids = data.results || [];
+        const pick =
+          vids.find((v) => v.site === 'YouTube' && v.type === 'Trailer') ||
+          vids.find((v) => v.site === 'YouTube');
+        const k = pick?.key;
+        if (active) setVideo(k && /^[a-zA-Z0-9_-]{6,15}$/.test(k) ? k : undefined);
+      } catch {
+        if (active) setVideo(undefined);
+      }
+    };
 
-    React.useEffect(() => {
-        fetchData()
-        fetchVideo()
-        
-        // eslint-disable-next-line
-    }, [])
+    fetchData();
+    fetchVideo();
+    return () => { active = false; };
+  }, [target]);
 
+  // Escape closes the modal.
+  useEffect(() => {
+    if (!target) return;
+    const onKey = (e) => { if (e.key === 'Escape') closeModal(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [target, closeModal]);
 
-    return (
-        <>
-            <div
-                className="poster"
-                style={{ cursor: "pointer" }}
-                color="inherit"
-                onClick={handleOpen}
-            >
-                {children}
+  if (!target || !content) return null;
+
+  const title = content.title || content.name;
+  const year = (content.release_date || content.first_air_date || '').substring(0, 4);
+  const isTv = target.media_type === 'tv';
+  const rating = content.vote_average;
+  const genres = content.genres || [];
+
+  return (
+    <div className="modal-back" onClick={closeModal}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-hero" style={artStyle(content.backdrop_path, target.id, 'backdrop', 780)}>
+          <button className="modal-close" onClick={closeModal} aria-label="Close"><I.close /></button>
+        </div>
+        <div className="modal-body">
+          <div className="modal-head">
+            <div className="modal-poster" style={artStyle(content.poster_path, target.id, 'poster', 500)} />
+            <div className="modal-meta">
+              <h2 className="modal-title">{title}</h2>
+              <div className="modal-sub">
+                {year && <span className="pt"><I.calendar style={{ width: 14, height: 14 }} /> {year}</span>}
+                {rating != null && <span className="pt"><I.star style={{ width: 13, height: 13 }} /> {Number(rating).toFixed(1)}</span>}
+                <span className="pt">{isTv ? 'TV Series' : 'Film'}</span>
+              </div>
+              {content.tagline && <p className="modal-tagline">"{content.tagline}"</p>}
             </div>
-            <Modal
-                aria-labelledby="transition-modal-title"
-                aria-describedby="transition-modal-description"
-                open={open}
-                onClose={handleClose}
-                closeAfterTransition
-                BackdropComponent={Backdrop}
-                BackdropProps={{
-                    timeout: 500,
-                }}
-            >
-                <Fade in={open}>
-                    {
-                        content && (
-                            <Box sx={style}>
-                                <div className='content_modal'>
-                                    <img
-                                        alt={content.name || content.title}
-                                        className='content_poster_potrait'
-                                        src={content.poster_path ?
-                                            `${img_500}/${content.poster_path}` :
-                                            unavailable
-                                        }
+          </div>
 
-                                    />
+          {content.overview && <p className="modal-overview">{content.overview}</p>}
 
-                                    <img
-                                        alt={content.name || content.title}
-                                        className='content_poster_landscape'
-                                        src={content.backdrop_path ?
-                                            `${img_500}/${content.backdrop_path}` :
-                                            unavailableLandscape
-                                        }
+          {genres.length > 0 && (
+            <div className="chips modal-chips">
+              {genres.map((g) => <span className="chip" key={g.id}>{g.name}</span>)}
+            </div>
+          )}
 
-                                    />
-                                    <div className='content_modal_about'>
-                                        <span className='content_modal_title'>
-                                            {content.title || content.name} (
-                                            {(
-                                                content.first_air_date ||
-                                                content.release_date ||
-                                                "--------"
-                                            ).substring(0, 4)}
-                                            )
-                                        </span>
-
-                                        {
-                                            content.tagline && (
-                                                <i className='tagline'>
-                                                    {content.tagline}
-                                                </i>
-                                            )
-                                        }
-                                        <span className='content_modal_description'>
-                                            {content.overview}
-                                        </span>
-
-                                        <div></div>
-
-                                        <Button
-                                            variant='contained'
-                                            startIcon={<YouTube />}
-                                            color='primary'
-                                            target='__blank'
-                                            href={`https://www.youtube.com/watch?v=${video}`}
-                                        >
-                                            Watch the Trailer
-                                        </Button>
-                                    </div>
-                                </div>
-                            </Box>
-                        )
-                    }
-                </Fade>
-            </Modal>
-        </>
-    );
+          {video && (
+            <div className="modal-actions">
+              <a
+                className="btn btn-primary"
+                href={`https://www.youtube.com/watch?v=${video}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <I.youtube /> Watch Trailer
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -1,78 +1,52 @@
-import { Chip } from '@mui/material'
-import axios from 'axios'
-import React, { useEffect } from 'react'
+import axios from 'axios';
+import { useEffect } from 'react';
+import { tmdbUrl } from '../../utils/tmdb';
 
-const Genres = ({
-    type,
-    selectedGenres,
-    setSelectedGenres,
-    genres,
-    setGenres,
-    setPage,
-}) => {
+/* Genre chip filter. Keeps the two-array model (selected vs available) but
+   renders the design's .gchip toggles inside a .genre-bar. */
+const Genres = ({ type, selectedGenres, setSelectedGenres, genres, setGenres, setPage }) => {
+  const handleAddGenre = (genre) => {
+    setSelectedGenres([...selectedGenres, genre]);
+    setGenres(genres.filter((g) => g.id !== genre.id));
+    setPage(1);
+  };
 
-    const handleAddGenre = (genre) => {
-        setSelectedGenres([...selectedGenres, genre])
-        setGenres(genres.filter((g) => g.id !== genre.id))
-        setPage(1)
+  const handleRemoveGenre = (genre) => {
+    setSelectedGenres(selectedGenres.filter((selected) => selected.id !== genre.id));
+    setGenres([...genres, genre]);
+    setPage(1);
+  };
+
+  const fetchGenres = async () => {
+    try {
+      const { data } = await axios.get(
+        tmdbUrl(`/genre/${type}/list`, { language: 'en-US' })
+      );
+      setGenres(data.genres);
+    } catch {
+      setGenres([]);
     }
+  };
 
-    const handleRemoveGenre = (genre) => {
-        setSelectedGenres((selectedGenres.filter((selected) => selected.id !== genre.id)))
-        setGenres([...genres, genre])
-        setPage(1)
-    }
+  useEffect(() => {
+    fetchGenres();
+    // eslint-disable-next-line
+  }, []);
 
-    const fetchGenres = async () => {
-        const { data } = await axios.get(`https://api.themoviedb.org/3/genre/${type}/list?api_key=${process.env.REACT_APP_API_KEY}&language=en-US`)
+  return (
+    <div className="genre-bar">
+      {selectedGenres.map((genre) => (
+        <button key={genre.id} className="gchip on" onClick={() => handleRemoveGenre(genre)}>
+          {genre.name}
+        </button>
+      ))}
+      {genres.map((genre) => (
+        <button key={genre.id} className="gchip" onClick={() => handleAddGenre(genre)}>
+          {genre.name}
+        </button>
+      ))}
+    </div>
+  );
+};
 
-        setGenres(data.genres)
-    }
-
-    useEffect(() => {
-        fetchGenres()
-        // return () => {
-        //     setGenres({})
-        // }
-
-        // eslint-disable-next-line
-    }, [])
-
-    return (
-        <>
-            <div style={{ padding: '6px 0' }}>
-
-                {
-                    selectedGenres && selectedGenres.map((genre) => (
-                        <Chip
-                            variant='filled'
-                            label={genre.name}
-                            style={{ margin: 2, }}
-                            // size='small'
-                            key={genre.id}
-                            clickable
-                            color='primary'
-                            onDelete={() => handleRemoveGenre(genre)}
-                        />
-                    ))
-                }
-
-                {
-                    genres && genres.map((genre) => (
-                        <Chip
-                            variant='outlined'
-                            label={genre.name}
-                            style={{ margin: 2, backgroundColor: "#fff" }}
-                            // size='small'
-                            key={genre.id}
-                            clickable
-                            onClick={() => handleAddGenre(genre)}
-                        />
-                    ))
-                }
-            </div>
-        </>
-    )
-}
-
-export default Genres
+export default Genres;

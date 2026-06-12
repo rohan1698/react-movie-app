@@ -1,8 +1,8 @@
 {
-  "name": "Movie App",
-  "short_name": "Movie App",
-  "theme_color": "#2196f3",
-  "background_color": "#2196f3",
+  "name": "Moviecon",
+  "short_name": "Moviecon",
+  "theme_color": "#0c0c12",
+  "background_color": "#0c0c12",
   "display": "standalone",
   "scope": "/",
   "start_url": "/",
