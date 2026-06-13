@@ -635,3 +635,76 @@ body {
 .modal-overview { color: var(--ink-2); line-height: 1.65; font-size: 15.5px; max-width: 64ch; }
 .modal-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 .modal-chips { margin-top: 18px; }
+
+/* ============================================================
+   MOBILE / NARROW VIEWPORTS
+   The base layout is desktop-first; these overrides adapt it for
+   phones (no width breakpoints existed before this block).
+   ============================================================ */
+@media (max-width: 600px) {
+  /* tighter outer frame → more room for the panel */
+  .stage { padding: 8px; gap: 8px; }
+  .panel { border-radius: 22px; }
+
+  /* top bar: the search pill must be allowed to shrink (flex min-width:auto
+     otherwise forces overflow and clips the appearance gear off-screen) */
+  .topbar { gap: 8px; padding: 8px 10px; }
+  .searchpill { min-width: 0; height: 40px; padding: 0 14px; }
+  .searchpill input { font-size: 14px; }
+  .icon-btn { width: 36px; height: 36px; }
+  .icon-btn svg { width: 17px; height: 17px; }
+
+  /* hero: shorter, with a length-capped description so a long synopsis
+     can't push the whole grid below the fold */
+  .hero { min-height: min(62vh, 500px); }
+  .hero-content { padding: 22px 16px 4px; gap: 10px; max-width: none; }
+  .hero-title { font-size: clamp(28px, 8.5vw, 42px); }
+  .hero-desc {
+    font-size: 14px; line-height: 1.5; max-width: none;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .studio-tag { font-size: 11.5px; letter-spacing: 0.2em; }
+  .hero-actions .btn { height: 46px; padding: 0 20px; }
+
+  /* carousel arrows: smaller and clear of the rail */
+  .hero-arrows { bottom: clamp(120px, 30vw, 168px); right: 12px; gap: 8px; }
+  .round-btn { width: 42px; height: 42px; }
+  .round-btn svg { width: 18px; height: 18px; }
+
+  /* thumbnail rail: a swipeable strip of tappable thumbs instead of
+     five microscopic ones squeezed onto one row */
+  .rail { padding: 6px 14px 16px; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+  .rail::-webkit-scrollbar { display: none; }
+  .thumb { flex: 0 0 76px; max-height: 54px; border-radius: 12px; }
+
+  /* content sections: less side padding, keep bottom clearance for the dock */
+  .section { padding: 18px 14px 120px; gap: 20px; }
+  .section.tight { padding-top: 14px; }
+  .page-head { padding: 22px 16px 0; }
+  .page-head h1 { font-size: clamp(26px, 7.5vw, 38px); }
+  .page-head p { font-size: 14px; }
+  .genre-bar { padding: 16px 14px 0; }
+  .search-head { padding: 22px 14px 0; gap: 16px; }
+  .search-field { height: 54px; }
+  .search-field input { font-size: 16px; } /* 16px avoids iOS input zoom */
+
+  /* row head wraps so the per-page selector drops below the title */
+  .row-head { flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+
+  /* two posters on portrait phones, three on wider/landscape — replaces the
+     single full-width column the desktop --card-min produced */
+  .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .card-poster-title { font-size: 14px; left: 11px; right: 11px; bottom: 11px; }
+  .card-poster-kind { left: 11px; bottom: 23px; }
+  .rating { font-size: 11px; padding: 4px 8px; top: 8px; right: 8px; }
+
+  /* dock: a touch smaller so it doesn't dominate the viewport */
+  .dock { padding: 7px; }
+  .dock-btn { width: 46px; height: 46px; }
+  .dock-btn svg { width: 21px; height: 21px; }
+
+  /* modal: use more of the screen */
+  .modal-back { padding: 10px; }
+  .modal { border-radius: 20px; max-height: 92vh; }
+  .modal-hero { height: clamp(150px, 26vh, 220px); }
+}
