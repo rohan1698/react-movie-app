@@ -1,7 +1,8 @@
 /* All TMDB requests go through a same-origin proxy that injects the api_key
    server-side — the key never reaches the browser:
-   - production: a Netlify Function (netlify/functions/tmdb.js)
-   - development: src/setupProxy.js forwards to TMDB using the key from .env
+   - production: a Netlify Function (netlify/functions/tmdb.cjs)
+   - development: the server.proxy block in vite.config.js forwards to TMDB
+     using the key from .env
    Build request URLs with tmdbUrl() so the client never sets api_key itself. */
 export const TMDB_BASE = '/api/tmdb';
 
