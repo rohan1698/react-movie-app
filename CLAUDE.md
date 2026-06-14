@@ -17,16 +17,16 @@ The build tooling is **Vite** (`vite.config.js`), not Create React App — `reac
 The TMDB API key is **never exposed to the browser** — all requests go through a same-origin proxy that injects the key server-side. Client code builds URLs with `tmdbUrl(path, params)` from `src/utils/tmdb.js` (base `/api/tmdb`) and never sets `api_key` itself.
 
 - **Dev (`npm run dev`):** the `server.proxy['/api/tmdb']` block in `vite.config.js` forwards `/api/tmdb/*` → TMDB, injecting the key from `.env` (read Node-side via `loadEnv`, so it never reaches the bundle). Create a root `.env` with `TMDB_API_KEY=<your_tmdb_api_key>` (from [TMDB](https://www.themoviedb.org/)); `REACT_APP_API_KEY=` also works as a fallback. (`npm run dev` exercises the Vite proxy, not the function — run `netlify dev` if you need to test the real function locally.)
-- **Prod (Netlify):** `netlify/functions/tmdb.js` proxies `/api/tmdb/*` (redirect in `netlify.toml`, must precede the SPA catch-all) using global `fetch` (Node 18+). Set **`TMDB_API_KEY`** in Netlify → Site settings → Environment variables. The build no longer needs `REACT_APP_API_KEY`.
+- **Prod (Netlify):** `netlify/functions/tmdb.cjs` proxies `/api/tmdb/*` (redirect in `netlify.toml`, must precede the SPA catch-all) using global `fetch`. Set **`TMDB_API_KEY`** in Netlify → Site settings → Environment variables. The build no longer needs `REACT_APP_API_KEY`. The file is **`.cjs` on purpose**: `package.json` has `"type": "module"`, so a `.js` function would be parsed as ESM and its CommonJS `exports.handler` would break the deploy — keep CommonJS functions as `.cjs` (or rewrite them as ESM `export`).
 
-`.env` is gitignored. If you change the proxy path or add an endpoint, the only places to touch are `tmdbUrl` plus the two proxies (`vite.config.js` for dev, `netlify/functions/tmdb.js` for prod).
+`.env` is gitignored. If you change the proxy path or add an endpoint, the only places to touch are `tmdbUrl` plus the two proxies (`vite.config.js` for dev, `netlify/functions/tmdb.cjs` for prod).
 
 ## Architecture
 
 **Frontend-only** React 19 SPA built with **Vite**. All data comes from the TMDB REST API via Axios, routed through a same-origin proxy (see *Environment & the TMDB proxy* above). The UI is the **"Moviecon" frosted-glass design** — pure CSS, **no MUI / no component library** (they were removed). Fonts are Google Fonts (Bricolage Grotesque + Hanken Grotesk, loaded in the root `index.html`). The Vite entry is the root `index.html` (referencing `/src/index.jsx`); `public/` holds static assets (`manifest.json`, `robots.txt`, `image/`) served at the root.
 
 ### Design system
-- **`src/styles/moviecon.css`** — the entire visual system (ambient background, glass surfaces, topbar, panel, hero, card grid, search, dock, modal, pager, genre/per-page chips). Imported once in `src/index.jsx`. Styling is driven by CSS custom properties (`--accent`, `--glass-blur`, `--card-min`) set on `.app-root`.
+- **`src/styles/moviecon.css`** — the entire visual system (ambient background, glass surfaces, topbar, panel, hero, card grid, search, dock, modal, pager, genre/per-page chips). Imported once in `src/index.jsx`. Styling is driven by CSS custom properties (`--accent`, `--glass-blur`, `--card-min`) set on `.app-root`. The base layout is desktop-first; a single `@media (max-width: 600px)` block at the end of the file adapts it for phones (multi-column grid via `grid-template-columns` override since `--card-min` is set inline, shorter/clamped hero, shrinkable search pill, swipeable thumbnail rail, tighter spacing). **Mobile Safari full-screen:** the shell is sized to `100dvh` (with `100vh` fallback) so the dynamic toolbar never clips the dock; `.stage` padding uses `max(clamp(...), env(safe-area-inset-*))` (in both the base and the `max-width:600px` block) to clear the notch/home indicator — these are no-ops on desktop where insets are 0. Paired with `index.html`'s `viewport-fit=cover` + `apple-mobile-web-app-*` meta tags for an immersive Add-to-Home-Screen experience.
 - **`src/components/icons/Icons.jsx`** — hand-rolled SVG icon set (`export const I`), replaces icon libraries.
 
 ### Shell & providers (`src/App.jsx`)
@@ -68,7 +68,8 @@ TMDB returns a fixed **20 results/page** with no page-size param. To show 20/40/
 
 Deployed to **Netlify**. `netlify.toml`:
 - `[build] command = "npm run build"`, `publish = "dist"` — Vite outputs to `dist/`. Vite emits external module scripts (no inline `<script>`), so the CSP uses `script-src 'self'` without `'unsafe-inline'`.
-- `[functions] directory = "netlify/functions"` for the TMDB proxy function.
+- `[build.environment] NODE_VERSION = "22"` — Vite 8 / `@vitejs/plugin-react` 6 need Node 20.19+/22; pinned so the build env doesn't fall back to an older default.
+- `[functions] directory = "netlify/functions"` for the TMDB proxy function (`tmdb.cjs` — see the proxy section on why it's `.cjs`).
 - Redirects (order matters): `/api/tmdb/* → /.netlify/functions/tmdb/:splat` **before** the SPA catch-all `* → /index.html`.
 - Security headers on `/*`: a tight CSP (`script-src 'self'`; `connect-src 'self'` — the browser only talks to our origin, the function calls TMDB server-side; `img-src 'self' data: https://image.tmdb.org`; Google Fonts `style-src`/`font-src`; `frame-src` YouTube; `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`, `form-action 'none'`, `upgrade-insecure-requests`) and HSTS (`max-age=31536000`).
 

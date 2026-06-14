@@ -29,13 +29,20 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #root, .app-root { margin: 0; height: 100%; }
+html, body, #root, .app-root { margin: 0; }
+/* Size the shell to the dynamic viewport so iOS Safari's collapsing toolbar /
+   home indicator never clips the dock or hero. 100vh is the fallback for
+   browsers without dvh; the body never scrolls (inner .panel-scroll does). */
+html { height: 100vh; height: 100dvh; }
+body, #root, .app-root { height: 100%; }
 body {
   font-family: var(--font-ui);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow: hidden;
+  overscroll-behavior: none;           /* no whole-page rubber-band on iOS */
+  -webkit-tap-highlight-color: transparent; /* no grey tap flash, app-like */
 }
 
 /* ---------- Ambient spatial environment ---------- */
@@ -101,7 +108,13 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: clamp(10px, 2.2vmin, 28px);
+  /* respect the notch / home indicator (viewport-fit=cover); falls back to the
+     clamp when env() insets are 0, so desktop spacing is unchanged. */
+  padding:
+    max(clamp(10px, 2.2vmin, 28px), env(safe-area-inset-top))
+    max(clamp(10px, 2.2vmin, 28px), env(safe-area-inset-right))
+    max(clamp(10px, 2.2vmin, 28px), env(safe-area-inset-bottom))
+    max(clamp(10px, 2.2vmin, 28px), env(safe-area-inset-left));
   gap: clamp(10px, 1.6vmin, 18px);
 }
 
@@ -186,6 +199,8 @@ body {
 .panel-scroll {
   position: absolute; inset: 0;
   overflow-y: auto; overflow-x: hidden;
+  overscroll-behavior: contain;          /* don't chain scroll to the page */
+  -webkit-overflow-scrolling: touch;     /* momentum scroll on iOS */
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.18) transparent;
 }
@@ -642,8 +657,15 @@ body {
    phones (no width breakpoints existed before this block).
    ============================================================ */
 @media (max-width: 600px) {
-  /* tighter outer frame → more room for the panel */
-  .stage { padding: 8px; gap: 8px; }
+  /* tighter outer frame → more room for the panel (keep safe-area insets) */
+  .stage {
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+    gap: 8px;
+  }
   .panel { border-radius: 22px; }
 
   /* top bar: the search pill must be allowed to shrink (flex min-width:auto
