@@ -19,8 +19,10 @@ const CustomPagination = ({ setPage, page = 1, numOfPages = 10 }) => {
   const handlePageChange = (next) => {
     if (next < 1 || next > total || next === page) return;
     setPage(next);
+    // Desktop scrolls .panel-scroll; mobile scrolls the document — reset both.
     const scroller = document.querySelector('.panel-scroll');
     if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const items = pageWindow(page, total);

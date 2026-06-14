@@ -19,9 +19,11 @@ function Shell() {
   const location = useLocation();
   const scrollRef = useRef(null);
 
-  // Reset the panel scroll position whenever the route changes.
+  // Reset scroll on route change. Desktop scrolls inside .panel-scroll; mobile
+  // scrolls the document (so Safari can collapse its toolbar) — reset both.
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    window.scrollTo(0, 0);
   }, [location.pathname]);
 
   return (
@@ -40,9 +42,12 @@ function Shell() {
               <Route path="*" element={<Error />} />
             </Routes>
           </div>
-          <Dock />
         </div>
       </div>
+
+      {/* Dock lives outside .panel: the panel's backdrop-filter creates a
+          containing block that would break the dock's position:fixed. */}
+      <Dock />
 
       <ContentModal />
       <TweaksPanel />

@@ -555,7 +555,10 @@ body {
    FLOATING DOCK
    ============================================================ */
 .dock-wrap {
-  position: absolute; left: 0; right: 0; bottom: clamp(14px, 2.4vmin, 26px);
+  /* fixed (not absolute-in-panel) so it survives mobile document scrolling;
+     .panel's backdrop-filter would otherwise trap a fixed/absolute child. */
+  position: fixed; left: 0; right: 0;
+  bottom: max(clamp(24px, 4.4vmin, 48px), env(safe-area-inset-bottom));
   display: flex; justify-content: center; z-index: 30; pointer-events: none;
 }
 .dock {
@@ -657,6 +660,16 @@ body {
    phones (no width breakpoints existed before this block).
    ============================================================ */
 @media (max-width: 600px) {
+  /* Document-level scrolling on phones so mobile Safari collapses its toolbar
+     (it only minimizes when the *page* scrolls, not an inner container). The
+     fixed dock keeps nav reachable while the topbar scrolls away with content. */
+  html, body { height: auto; min-height: 100dvh; overflow: visible; }
+  #root, .app-root, .stage { height: auto; min-height: 100dvh; }
+  .panel { flex: 0 0 auto; }            /* grow with content; keep overflow:hidden for rounded corners */
+  .panel-scroll { position: static; overflow: visible; height: auto; }
+  /* don't scroll the page behind an open modal (Safari 15.4+ :has) */
+  body:has(.modal-back) { overflow: hidden; }
+
   /* tighter outer frame → more room for the panel (keep safe-area insets) */
   .stage {
     padding:
@@ -667,6 +680,7 @@ body {
     gap: 8px;
   }
   .panel { border-radius: 22px; }
+  .dock-wrap { bottom: max(14px, calc(env(safe-area-inset-bottom) + 10px)); }
 
   /* top bar: the search pill must be allowed to shrink (flex min-width:auto
      otherwise forces overflow and clips the appearance gear off-screen) */
