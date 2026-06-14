@@ -30,6 +30,10 @@
 
 * { box-sizing: border-box; }
 html, body, #root, .app-root { margin: 0; }
+/* Dark canvas matching the ambient base + theme-color, so any area the fixed
+   ambient layer doesn't paint (iOS safe-area / behind Safari's toolbar /
+   overscroll) is dark instead of the browser's default white. */
+html, body { background: #0c0c12; }
 /* Size the shell to the dynamic viewport so iOS Safari's collapsing toolbar /
    home indicator never clips the dock or hero. 100vh is the fallback for
    browsers without dvh; the body never scrolls (inner .panel-scroll does). */
